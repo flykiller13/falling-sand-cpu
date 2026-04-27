@@ -5,7 +5,9 @@
 #include "imgui.h"
 #include "falling-sand/simulation/simulation.h"
 
-UI::UI() {
+#include <unistd.h>
+
+UI::UI() : paused(false), window_(nullptr) {
 }
 
 void UI::init(GLFWwindow *window) {
@@ -14,8 +16,10 @@ void UI::init(GLFWwindow *window) {
   ImGui::StyleColorsDark();
 
   // Setup Platform/Renderer backends
-  ImGui_ImplGlfw_InitForOpenGL(window, true);
+  window_ = window;
+  ImGui_ImplGlfw_InitForOpenGL(window_, true);
   ImGui_ImplOpenGL3_Init("#version 330");
+
 }
 
 void UI::update(Simulation &sim) {
@@ -35,6 +39,19 @@ void UI::update(Simulation &sim) {
   }
   ImGui::SliderInt("Brush Size", &brush_size, 1, 10);
 
+  // Draw brush outline
+  if (!ImGui::GetIO().WantCaptureMouse) {
+    // Dont draw over imgui window
+    ImDrawList *draw_list = ImGui::GetForegroundDrawList();
+    ImVec2 pos = ImGui::GetMousePos();
+    int window_width, window_height;
+    glfwGetWindowSize(window_, &window_width, &window_height);
+    float outline_radius = (brush_size + 1) * (
+                             window_width / sim.get_grid_width());
+    draw_list->AddCircle(pos, outline_radius,
+                         IM_COL32(255, 255, 255, 255));
+  }
+
   // Simulation
   ImGui::SeparatorText("Simulation");
   // Stats
@@ -43,6 +60,10 @@ void UI::update(Simulation &sim) {
   ImGui::Text("Delta Time: %.3f ms", ImGui::GetIO().DeltaTime * 1000.0f);
   ImGui::Text("Grid: %d x %d", sim.get_grid_width(), sim.get_grid_height());
   ImGui::Text("Active Particles: %d", sim.get_active_cell_count());
+
+  if (ImGui::Button(paused ? "Resume" : "Pause"))
+    paused = !paused;
+  ImGui::SameLine();
   // Clear simulation
   if (ImGui::Button("Clear"))
     sim.clear();

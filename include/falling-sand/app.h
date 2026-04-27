@@ -1,6 +1,7 @@
 ﻿#ifndef FALLINGSAND_APP_H
 #define FALLINGSAND_APP_H
 
+#include "config.h"
 #include "renderer/renderer.h"
 #include "input.h"
 #include "ui.h"
@@ -8,9 +9,15 @@
 
 #define ENGINE_TITLE "Falling Sand"
 
+/**
+ *
+ */
 class App {
 public:
   App();
+  App(const Config &config = Config{});
+  ~App();
+
   bool init(); // Initializes GLFW window and simulation objects
   void run(); // Runs the main simulation loop
   void cleanup(); // Terminates GLFW window and simulation objects
@@ -20,16 +27,19 @@ private:
                                         int height);
   // Updates the viewport on window resize
 
-  Input input;
-  Simulation sim;
-  Renderer renderer;
-  UI ui;
+  Input input_;
+  Simulation sim_;
+  Renderer renderer_;
+  UI ui_;
 
-  GLFWwindow *window_;
-  int window_width;
-  int window_height;
-  double last_frame = 0.0;
-  double current_frame, delta_time;
+  GLFWwindow *window_{};
+  int window_width_{};
+  int window_height_{};
+
+  double last_frame_ = 0.0;
+  double current_frame_{}, delta_time_{};
+
+  Config config_;
 };
 
 

@@ -3,7 +3,7 @@
 #include "falling-sand/app.h"
 
 int main() {
-  App app;
+  App app(Config{});
 
   if (!app.init()) {
     std::cerr << "Failed to initialize app" << std::endl;

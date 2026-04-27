@@ -32,6 +32,7 @@ void Input::apply_brush(GLFWwindow *window, Simulation &sim, int brush_size,
   if (ImGui::GetIO().WantCaptureMouse)
     return;
 
+  // Calculate cursor position in sim grid
   int width, height;
   glfwGetWindowSize(window, &width, &height);
   double xpos, ypos;
@@ -43,9 +44,12 @@ void Input::apply_brush(GLFWwindow *window, Simulation &sim, int brush_size,
   int grid_x = static_cast<int>(xpos / x_ratio);
   int grid_y = static_cast<int>((height - ypos) / y_ratio);
 
+  // Paint circle around the cursor position
   for (int x = grid_x - brush_size; x <= grid_x + brush_size; x++) {
     for (int y = grid_y - brush_size; y <= grid_y + brush_size; y++) {
-      sim.set_cell(x, y, type);
+      if ((x - grid_x) * (x - grid_x) + (y - grid_y) * (y - grid_y) <=
+          brush_size * brush_size)
+        sim.set_cell(x, y, type);
     }
   }
 }

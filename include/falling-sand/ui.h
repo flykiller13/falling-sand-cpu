@@ -18,6 +18,10 @@ public:
   CellType brush_type = CellType::Sand;
   int brush_size = 1;
   const char *brush_types[5] = {"Empty", "Sand", "Stone", "Water", "Gas"};
+  bool paused;
+
+private:
+  GLFWwindow *window_{};
 };
 
 
