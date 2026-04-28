@@ -15,7 +15,7 @@
 class App {
 public:
   App();
-  App(const Config &config = Config{});
+  explicit App(const Config &config = Config{});
   ~App();
 
   bool init(); // Initializes GLFW window and simulation objects

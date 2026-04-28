@@ -1,13 +1,12 @@
 ﻿#ifndef FALLINGSAND_RENDERER_H
 #define FALLINGSAND_RENDERER_H
+#include "color.h"
+
 #include <memory>
 
 #include "shader.h"
-#include "../simulation/simulation.h"
+#include "falling-sand/simulation/simulation.h"
 
-struct Color {
-  uint8_t r, g, b, a;
-};
 
 class Renderer {
 public:
@@ -24,18 +23,11 @@ public:
   // Converts color (RGBA) to int32 (ABGR)
 
 private:
-  unsigned int VAO, VBO, EBO;
-  std::unique_ptr<Shader> shader;
+  unsigned int vao_, vbo_, ebo_;
+  std::unique_ptr<Shader> shader_;
   unsigned int texture_id_;
-  std::vector<uint32_t> pixels;
+  std::vector<uint32_t> pixels_;
   // Pixel data array - Holds the colors that are passed to the quad
-
-  const Color yellow = {255, 255, 0, 255};
-  const Color blue = {27, 81, 255, 200};
-  const Color grey = {149, 149, 149, 255};
-  const Color gas = {42, 132, 24, 80};
-  const Color black = {0, 0, 0, 255};
-  const Color debug = {255, 0, 255, 255};
 };
 
 #endif //FALLINGSAND_RENDERER_H

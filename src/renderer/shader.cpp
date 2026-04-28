@@ -94,14 +94,14 @@ void Shader::set_float(const std::string &name, float value) const {
 
 void Shader::check_compile_errors(unsigned int shader, std::string type) {
   int success;
-  char infoLog[1024];
+  char info_log[1024];
 
   if (type != "PROGRAM") {
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (!success) {
-      glGetShaderInfoLog(shader, 1024, nullptr, infoLog);
+      glGetShaderInfoLog(shader, 1024, nullptr, info_log);
       std::cout << "ERROR::SHADER_COMPILATION_ERROR of type: " << type << "\n"
-          << infoLog <<
+          << info_log <<
           "\n -- --------------------------------------------------- -- "
           << std::endl;
     } else {
@@ -110,9 +110,9 @@ void Shader::check_compile_errors(unsigned int shader, std::string type) {
   } else {
     glGetProgramiv(shader, GL_LINK_STATUS, &success);
     if (!success) {
-      glGetProgramInfoLog(shader, 1024, nullptr, infoLog);
+      glGetProgramInfoLog(shader, 1024, nullptr, info_log);
       std::cout << "ERROR::PROGRAM_LINKING_ERROR of type: " << type << "\n"
-          << infoLog <<
+          << info_log <<
           "\n -- --------------------------------------------------- -- "
           << std::endl;
     } else {
