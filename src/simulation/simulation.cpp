@@ -39,15 +39,17 @@ void Simulation::simulation_tick() {
         active_cell_count_++;
 
       int dir = (dis_(gen_) == 0) ? -1 : 1; // Randomly choose left or right
+      CellType type;
 
       // MOVEMENT RULES
       switch (curr.type) {
       case CellType::Sand:
-        if (can_move_to(x, y - 1)) {
+        type = CellType::Sand;
+        if (can_move_to(x, y - 1, type)) {
           // Check below
           move_to(x, y, x, y - 1);
         } else {
-          if (can_move_to(x + dir, y - 1)) {
+          if (can_move_to(x + dir, y - 1, type)) {
             // Check left/right-down
             move_to(x, y, x + dir, y - 1);
           }
@@ -56,34 +58,37 @@ void Simulation::simulation_tick() {
 
       case CellType::Water: // Water is the same as sand but we also
         // check left and right
-        if (can_move_to(x, y - 1)) {
-          // Check below
+        type = CellType::Water;
+        if (can_move_to(x, y - 1, type)) {
           move_to(x, y, x, y - 1);
+        } else if (can_move_to(x + dir, y - 1, type)) {
+          move_to(x, y, x + dir, y - 1);
         } else {
-          if (can_move_to(x + dir, y - 1)) {
-            // Check left/right-down
-            move_to(x, y, x + dir, y - 1);
-          } else {
-            if (can_move_to(x + dir, y)) {
-              // Check left/right
-              move_to(x, y, x + dir, y);
+          // Spread horizontally up to dispersion_range cells
+          for (int i = 1; i <= dispersion_range; i++) {
+            if (!is_in_bounds(x + dir * i, y))
+              break;
+            if (can_move_to(x + dir * i, y, type)) {
+              move_to(x, y, x + dir * i, y);
+              break;
             }
           }
         }
         break;
 
       case CellType::Gas: // Gas is the same as water but goes up
-        if (can_move_to(x, y + 1)) {
-          // Check above
+        type = CellType::Gas;
+        if (can_move_to(x, y + 1, type)) {
           move_to(x, y, x, y + 1);
+        } else if (can_move_to(x + dir, y + 1, type)) {
+          move_to(x, y, x + dir, y + 1);
         } else {
-          if (can_move_to(x + dir, y + 1)) {
-            // Check left/right-up
-            move_to(x, y, x + dir, y + 1);
-          } else {
-            if (can_move_to(x + dir, y)) {
-              // Check left/right
-              move_to(x, y, x + dir, y);
+          for (int i = 1; i <= dispersion_range; i++) {
+            if (!is_in_bounds(x + dir * i, y))
+              break;
+            if (can_move_to(x + dir * i, y, type)) {
+              move_to(x, y, x + dir * i, y);
+              break;
             }
           }
         }
@@ -112,16 +117,37 @@ bool Simulation::is_in_bounds(int x, int y) const {
   return x >= 0 && x < grid_.width && y >= 0 && y < grid_.height;
 }
 
-bool Simulation::can_move_to(int x, int y) const {
-  // Need to check next grid too since we write only to next
-  return is_in_bounds(x, y) && (get_cell(x, y).type == CellType::Empty) &&
-         (next_grid_.get_cell(x, y).type == CellType::Empty);
+bool Simulation::can_move_to(int x, int y, CellType cell_type) const {
+  // Move is allowed within bounds and when density is lower
+  return is_in_bounds(x, y) &&
+         (density(get_cell(x, y).type) < density(cell_type)) &&
+         (density(next_grid_.get_cell(x, y).type) < density(cell_type));
 }
 
 void Simulation::move_to(int from_x, int from_y, int to_x, int to_y) {
   if (!is_in_bounds(from_x, from_y) || !is_in_bounds(to_x, to_y))
     return;
 
-  next_grid_.set_cell(to_x, to_y, get_cell(from_x, from_y));
-  next_grid_.set_cell(from_x, from_y, get_cell(to_x, to_y));
+  if (next_grid_.get_cell(from_x, from_y).type == grid_.get_cell(from_x, from_y)
+      .type) {
+    // Was the particle displaced?
+    next_grid_.set_cell(to_x, to_y, get_cell(from_x, from_y));
+    next_grid_.set_cell(from_x, from_y, get_cell(to_x, to_y));
+  }
+
+}
+
+float Simulation::density(CellType type) {
+  switch (type) {
+  case CellType::Sand:
+    return 50.0f;
+  case CellType::Water:
+    return 1.0f;
+  case CellType::Gas:
+    return 0.1f;
+  case CellType::Stone:
+    return 100.f;
+  default: // empty and default density is 0
+    return 0.0f;
+  }
 }

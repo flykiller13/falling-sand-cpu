@@ -26,10 +26,13 @@ public:
   const uint32_t &get_active_cell_count() const { return active_cell_count_; }
 
   bool is_in_bounds(int x, int y) const;
-  bool can_move_to(int x, int y) const; // Returns true if the cell is empty
+  bool can_move_to(int x, int y, CellType cell_type) const;
+  // Returns true if the cell is empty
   void move_to(int from_x, int from_y, int to_x, int to_y); // Swaps cells
 
 private:
+  static float density(CellType type);
+
   // We use a double buffer method - Data is read from grid and written to next_grid
   Grid grid_;
   Grid next_grid_;
@@ -38,6 +41,8 @@ private:
   double accumulator_ = 0.0;
   const double fixed_delta_time = 1.0 / 60; // 60 ticks per second
   const double max_delta_time = 1.0 / 10.0;
+  const int dispersion_range = 5;
+  // how many cells water/gas spread sideways per tick
 
   // random - for choosing a direction
   std::random_device rd_;
