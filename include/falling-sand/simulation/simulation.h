@@ -1,12 +1,18 @@
 ﻿#ifndef FALLINGSAND_SIMULATION_H
 #define FALLINGSAND_SIMULATION_H
 #include "grid.h"
+#include "falling-sand/config.h"
 
 #include <random>
 
+struct Chunk {
+  bool dirty_current;
+  bool dirty_next;
+};
+
 class Simulation {
 public:
-  Simulation(int sim_width, int sim_height);
+  Simulation(const Config &config);
   void update(double delta_time);
   // Runs ticks of the simulation based on delta time
   void simulation_tick();
@@ -17,7 +23,7 @@ public:
 
   const std::vector<Cell> &get_cells() const { return grid_.cells; }
 
-  void set_cell(int x, int y, CellType type) { grid_.set_cell(x, y, type); }
+  void set_cell(int x, int y, CellType type);
 
   const Cell &get_cell(int x, int y) const {
     return grid_.cells[x + y * grid_.width];
@@ -32,11 +38,23 @@ public:
 
 private:
   static float density(CellType type);
+  void mark_dirty(int x, int y); // marks a chunk dirty given pixel coords
+  void iterate_chunk(int cx, int cy);
+  // iterates over the cells in chunks[cx][cy]
+  [[nodiscard]] int chunk_index(const int cx, const int cy) const {
+    return cy * num_chunks_x + cx;
+  }
 
   // We use a double buffer method - Data is read from grid and written to next_grid
   Grid grid_;
   Grid next_grid_;
   uint32_t active_cell_count_ = 0;
+
+  const int num_chunks_x;
+  const int num_chunks_y;
+  std::vector<Chunk> chunks_;
+  int chunk_size_;
+  int chunk_margin_;
 
   double accumulator_ = 0.0;
   const double fixed_delta_time = 1.0 / 60; // 60 ticks per second

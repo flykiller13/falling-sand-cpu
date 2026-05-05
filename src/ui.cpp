@@ -33,11 +33,11 @@ void UI::update(Simulation &sim) {
   // Brush
   ImGui::SeparatorText("Brush");
   int current_brush_type = static_cast<int>(brush_type);
-  if (ImGui::Combo("Brush Material", &current_brush_type, brush_types,
+  if (ImGui::Combo("Material", &current_brush_type, brush_types,
                    IM_ARRAYSIZE(brush_types))) {
     brush_type = static_cast<CellType>(current_brush_type);
   }
-  ImGui::SliderInt("Brush Size", &brush_size, 1, 10);
+  ImGui::SliderInt("Size", &brush_size, 1, 10);
 
   // Draw brush outline
   if (!ImGui::GetIO().WantCaptureMouse) {

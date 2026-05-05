@@ -6,13 +6,8 @@
 
 #include "falling-sand/input.h"
 
-App::App() : input_(), sim_(800, 800), renderer_(), ui_(), window_(nullptr),
-             window_width_(800), window_height_(800), current_frame_(0),
-             delta_time_(0) {
-}
-
 App::App(const Config &config) : input_(),
-                                 sim_(config.grid_width, config.grid_height),
+                                 sim_(config),
                                  renderer_(),
                                  ui_(),
                                  window_(nullptr),
