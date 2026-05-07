@@ -6,15 +6,10 @@
 
 #include "falling-sand/input.h"
 
-App::App(const Config &config) : input_(),
-                                 sim_(config),
-                                 renderer_(),
-                                 ui_(),
-                                 window_(nullptr),
+App::App(const Config &config) : sim_(config),
                                  window_width_(config.window_width),
                                  window_height_(config.window_height),
-                                 current_frame_(0),
-                                 delta_time_(0), config_(config) {
+                                 config_(config) {
 }
 
 App::~App() {
@@ -49,7 +44,7 @@ bool App::init() {
   glfwSetWindowUserPointer(window_, this);
 
   // Initialize GLAD
-  if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+  if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
     std::cerr << "Failed to initialize GLAD" << std::endl;
     return false;
   }
@@ -87,10 +82,6 @@ void App::run() {
     glfwSwapBuffers(window_);
     glfwPollEvents();
   }
-}
-
-void App::cleanup() {
-
 }
 
 void App::framebuffer_size_callback(GLFWwindow *window, int width,

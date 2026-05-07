@@ -7,6 +7,7 @@
 enum class CellType;
 class Simulation;
 
+// ui handled using ImGui
 class UI {
 public:
   UI();

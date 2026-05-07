@@ -6,13 +6,13 @@
 #include <random>
 
 struct Chunk {
-  bool dirty_current;
-  bool dirty_next;
+  bool dirty_current; // process this tick
+  bool dirty_next; // process next tick
 };
 
 class Simulation {
 public:
-  Simulation(const Config &config);
+  explicit Simulation(const Config &config);
   void update(double delta_time);
   // Runs ticks of the simulation based on delta time
   void simulation_tick();
@@ -33,11 +33,10 @@ public:
 
   bool is_in_bounds(int x, int y) const;
   bool can_move_to(int x, int y, CellType cell_type) const;
-  // Returns true if the cell is empty
   void move_to(int from_x, int from_y, int to_x, int to_y); // Swaps cells
 
 private:
-  static float density(CellType type);
+  static float density(CellType type); // returns the density of type
   void mark_dirty(int x, int y); // marks a chunk dirty given pixel coords
   void iterate_chunk(int cx, int cy);
   // iterates over the cells in chunks[cx][cy]
@@ -50,12 +49,16 @@ private:
   Grid next_grid_;
   uint32_t active_cell_count_ = 0;
 
+  // dirty chunks - the grid is divided into chunks.
+  // we iterate only over dirty chunks,
+  // thus saving many iterations on settled particles
   const int num_chunks_x;
   const int num_chunks_y;
   std::vector<Chunk> chunks_;
   int chunk_size_;
   int chunk_margin_;
 
+  // timestep
   double accumulator_ = 0.0;
   const double fixed_delta_time = 1.0 / 60; // 60 ticks per second
   const double max_delta_time = 1.0 / 10.0;

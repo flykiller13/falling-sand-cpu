@@ -1,6 +1,6 @@
 ﻿#include "falling-sand/input.h"
 #include "falling-sand/simulation/grid.h" // For CellType
-#include "../third-party/imgui/imgui.h"
+#include "imgui.h"
 
 Input::Input() : window_(nullptr) {
 }
@@ -9,7 +9,7 @@ void Input::init(GLFWwindow *glfw_window) {
   window_ = glfw_window;
 }
 
-void Input::update(Simulation &sim, CellType brushType, int brushSize) {
+void Input::update(Simulation &sim, CellType brush_type, int brush_size) {
   int width, height;
   glfwGetWindowSize(window_, &width, &height);
 
@@ -19,10 +19,10 @@ void Input::update(Simulation &sim, CellType brushType, int brushSize) {
 
   // LMB - Draw selected material
   if (glfwGetMouseButton(window_, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-    apply_brush(window_, sim, brushSize, brushType);
+    apply_brush(window_, sim, brush_size, brush_type);
   // RMB - Draw Stone
   if (glfwGetMouseButton(window_, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
-    apply_brush(window_, sim, brushSize, CellType::Stone);
+    apply_brush(window_, sim, brush_size, CellType::Stone);
 }
 
 void Input::apply_brush(GLFWwindow *window, Simulation &sim, int brush_size,

@@ -14,13 +14,11 @@
  */
 class App {
 public:
-  App();
   explicit App(const Config &config = Config{});
-  ~App();
+  ~App(); // Terminates GLFW window and simulation objects
 
   bool init(); // Initializes GLFW window and simulation objects
   void run(); // Runs the main simulation loop
-  void cleanup(); // Terminates GLFW window and simulation objects
 
 private:
   static void framebuffer_size_callback(GLFWwindow *window, int width,
@@ -36,7 +34,7 @@ private:
   int window_width_{};
   int window_height_{};
 
-  double last_frame_ = 0.0;
+  double last_frame_{};
   double current_frame_{}, delta_time_{};
 
   Config config_;

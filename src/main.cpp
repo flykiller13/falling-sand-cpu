@@ -3,6 +3,7 @@
 #include "falling-sand/app.h"
 
 int main() {
+  // create and run the app
   App app(Config{});
 
   if (!app.init()) {
@@ -11,7 +12,6 @@ int main() {
   }
 
   app.run();
-  app.cleanup();
 
   return 0;
 }

@@ -9,7 +9,7 @@ class Input {
 public:
   Input();
   void init(GLFWwindow *glfw_window); // Sets the GLFW window
-  void update(Simulation &sim, CellType brushType, int brushSize);
+  void update(Simulation &sim, CellType brush_type, int brush_size);
   // Processes inputs
   void apply_brush(GLFWwindow *window, Simulation &sim, int brush_size,
                    CellType type);

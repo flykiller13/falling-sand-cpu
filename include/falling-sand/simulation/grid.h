@@ -30,7 +30,9 @@ public:
 
 private:
   Color get_type_color(CellType type);
+  // returns type's default color with a random offset
 
+  // default cell type color list
   const Color yellow = {255, 255, 0, 255};
   const Color blue = {27, 81, 255, 200};
   const Color grey = {149, 149, 149, 255};

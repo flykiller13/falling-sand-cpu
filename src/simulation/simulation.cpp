@@ -13,6 +13,7 @@ Simulation::Simulation(const Config &config)
     gen_(rd_()),
     dis_(0, 1) {
 
+  // initialize chunk array - start dirty so all chunks are processed on first pass
   chunks_.resize(num_chunks_x * num_chunks_y, Chunk{true, false});
 }
 

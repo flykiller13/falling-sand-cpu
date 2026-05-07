@@ -7,7 +7,7 @@
 
 #include <unistd.h>
 
-UI::UI() : paused(false), window_(nullptr) {
+UI::UI() : paused(false) {
 }
 
 void UI::init(GLFWwindow *window) {
