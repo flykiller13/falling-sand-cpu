@@ -64,14 +64,17 @@ This is interesting because on the [GPU branch](https://github.com/flykiller13/f
 since we're using the pull
 method - cell movement has to be deterministic.
 
-### Iteration Order
+### Double Buffering
 
-When running the simulation, we iterate over each cell in the grid. The **iteration order matters** for correctness - we
-process left to right, and for each column we process from bottom to top (where y=0 is the bottom). This ensures
-particles fall naturally and prevents ordering artifacts. We use **double buffering** (reading from `grid`, writing to
-`next_grid`) to ensure we always have consistent state during the update, then swap buffers after all cells are
-processed. Without proper iteration order, you could get visual artifacts like particles teleporting or not falling
-smoothly.
+To make sure a particle isn't processed twice in the same tick, the simulation keeps **two grids**. Each tick we read
+from `grid` (a frozen snapshot of the previous state) and write all updates into `next_grid`. Once every cell has been
+processed, we swap the buffers. Reading and writing against separate grids means a particle that moves "down" can't be
+picked up again later in the same tick and moved a second time, and it lets us swap the entire grid image at once
+instead of patching it in place.
+
+Iteration order still matters on top of this: we walk left-to-right, bottom-to-top (y=0 is the bottom) so that when two
+cells contend for the same destination the resolution is consistent and particles fall naturally instead of producing
+ordering artifacts.
 
 ```cpp
 // Iterate over grid - order matters!
@@ -89,7 +92,8 @@ std::swap(grid.cells, next_grid.cells);
 
 When trying to run simulations at higher grid sizes (800x800 and up), the simulation was iterating over every cell in
 the grid every tick, even when the simulation was empty or most particles had settled. That's 640,000 empty iterations
-per tick. To solve this we use a **dirty chunk system**. We cut the grid into chunks - in my tests, a **16×16 grid of chunks on an
+per tick. To solve this we use a **dirty chunk system**. We cut the grid into chunks - in my tests, a **16×16 grid of
+chunks on an
 800x800 grid** (so 50×50 pixels per chunk) was a good compromise. If there is movement in a chunk, or close enough to a
 neighboring chunk, the chunk is marked dirty. Each tick we iterate only over the dirty chunks. To wake up neighboring
 chunks we use a **margin value**, which can be tweaked through the config.
@@ -105,32 +109,20 @@ chunks in a **checkerboard pattern** to avoid race conditions between neighborin
 
 ### Rendering Pipeline
 
-The cells get translated to colors that are saved in a **pixel array**. Each cell type maps to a specific color (sand →
-yellow, water → blue, stone → grey, etc.). The pixel array is then passed to the **texture quad**, which is displayed on
-screen.
+Each cell carries its own `color` (assigned per cell type — sand → yellow, water → blue, stone → grey, etc.). The
+renderer walks the cell array, packs each color into an ABGR `uint32_t` pixel, and uploads the buffer to the **texture
+quad** that gets drawn to the screen.
+Each cell gets a random offset for its color, giving the simulation a less monotone look.
 
 ```cpp
-// Convert cells to pixel colors
 for (int i = 0; i < cells.size(); i++) {
     Cell cell = cells[i];
-    switch (cell.type) {
-        case CellType::Sand:
-            pixels[i] = color_to_agbr(yellow);
-            break;
-        // ... other cell types
-    }
+    pixels_[i] = color_to_abgr(cell.color);
 }
 // Update texture with pixel data
-glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, 
-                GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height,
+                GL_RGBA, GL_UNSIGNED_BYTE, pixels_.data());
 ```
-
-## Future Optimizations
-
-- Dirt chunks have been implemented. The next step would be to multithread them.
-
-- Since implementing rules is easier in this CPU version, we can add **velocity/acceleration** pretty easily. Might do
-  that in the future also.
 
 ## Tested On
 
@@ -251,7 +243,9 @@ The grid is configured to 400x400 by default but can handle up to 1000x1000.
 
 - [ ] Add velocity/acceleration to particles
 - [ ] Add more particle types (fire, acid, etc.)
+- [ ] Dirty chunk multithreading
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE). Vendored dependencies in `third-party/` (Dear ImGui, GLAD) retain their own licenses; GLFW (linked at build time) is distributed under the zlib/libpng license.
+This project is licensed under the [MIT License](LICENSE). Vendored dependencies in `third-party/` (Dear ImGui, GLAD)
+retain their own licenses; GLFW (linked at build time) is distributed under the zlib/libpng license.
