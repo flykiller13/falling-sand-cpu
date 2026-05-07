@@ -35,6 +35,20 @@ case CellType::Sand:
     break;
 ```
 
+### Density-Based Interactions
+
+Interaction between cell types is evaluated using each cell type's **density**. A higher-density cell is allowed to swap
+with a lower-density cell, which is what produces effects like **sand sinking through water** or **gas rising through
+liquid**. This also lets us implement interactions generically from a single density value instead of hardcoding every
+pairwise particle interaction.
+
+```cpp
+// Move is allowed within bounds and when density is lower
+return is_in_bounds(x, y) &&
+       (density(get_cell(x, y).type) < density(cell_type)) &&
+       (density(next_grid_.get_cell(x, y).type) < density(cell_type));
+```
+
 ### Random Direction Selection
 
 One important mechanic is choosing a **random direction** (left/right) because cells check their neighbors sequentially
@@ -46,7 +60,8 @@ behavior you'd expect from falling sand.
 int dir = (dis(gen) == 0) ? -1 : 1; // Randomly choose left or right
 ```
 
-This is interesting because on the [GPU branch](link-to-gpu-branch), we can't use random since we're using the pull
+This is interesting because on the [GPU branch](https://github.com/flykiller13/falling-sand-gpu), we can't use random
+since we're using the pull
 method - cell movement has to be deterministic.
 
 ### Iteration Order
@@ -69,6 +84,24 @@ for (int x = 0; x < grid.width; x++) {
 // Swap buffers after all cells are processed
 std::swap(grid.cells, next_grid.cells);
 ```
+
+### Dirty Chunk System
+
+When trying to run simulations at higher grid sizes (800x800 and up), the simulation was iterating over every cell in
+the grid every tick, even when the simulation was empty or most particles had settled. That's 640,000 empty iterations
+per tick. To solve this we use a **dirty chunk system**. We cut the grid into chunks - in my tests, a **16×16 grid of chunks on an
+800x800 grid** (so 50×50 pixels per chunk) was a good compromise. If there is movement in a chunk, or close enough to a
+neighboring chunk, the chunk is marked dirty. Each tick we iterate only over the dirty chunks. To wake up neighboring
+chunks we use a **margin value**, which can be tweaked through the config.
+
+This optimization massively increased performance, allowing us to run grids of **1000x1000 and beyond**. At higher
+resolutions the sim becomes too small visually, and we can apply the same concept by only simulating a specific region
+of the grid (and using the chunk system within it).
+
+This system can be further enhanced by introducing **multithreading**. In that case we would have to iterate over the
+chunks in a **checkerboard pattern** to avoid race conditions between neighboring chunks updating simultaneously.
+
+*(Performance comparison table will be added later.)*
 
 ### Rendering Pipeline
 
@@ -94,12 +127,10 @@ glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height,
 
 ## Future Optimizations
 
-This simulation can heavily benefit from a **dirty rects** mechanic - updating only areas of the simulation that need to
-be updated. This is described in [Noita's GDC talk](https://www.youtube.com/watch?v=prXuyMCgbTc). Currently, we iterate
-over large empty/static areas which wastes a lot of iterations. Might implement this in the future.
+- Dirt chunks have been implemented. The next step would be to multithread them.
 
-Since implementing rules is easier in this CPU version, we can add **velocity/acceleration** pretty easily. Might do
-that in the future also.
+- Since implementing rules is easier in this CPU version, we can add **velocity/acceleration** pretty easily. Might do
+  that in the future also.
 
 ## Tested On
 
@@ -131,15 +162,15 @@ that in the future also.
 
 ```bash
 # Install dependencies (Ubuntu/Debian)
-sudo apt-get install libglfw3-dev pkg-config
+sudo apt-get install build-essential cmake libglfw3-dev pkg-config
 
 # Build
 mkdir build && cd build
 cmake ..
-make
+cmake --build .
 
 # Run
-./FallingSand
+./falling_sand
 ```
 
 ### Windows (MSVC)
@@ -152,55 +183,58 @@ cmake .. -G "Visual Studio 17 2022"
 cmake --build . --config Release
 
 # Run
-Release\FallingSand.exe
-```
-
-### macOS
-
-```bash
-# Install dependencies via Homebrew
-brew install glfw pkg-config
-
-# Build
-mkdir build && cd build
-cmake ..
-make
-
-# Run
-./FallingSand
+Release\falling_sand.exe
 ```
 
 ## Project Structure
 
 ```
-FallingSand/
+falling-sand-cpu/
 ├── include/
-│   └── FallingSand/
+│   └── falling-sand/
 │       ├── app.h              # Main application class
+│       ├── config.h           # Configuration struct (window/grid/chunk params)
 │       ├── input.h            # Input handling (mouse/keyboard)
 │       ├── ui.h               # ImGui interface
 │       ├── renderer/
 │       │   ├── renderer.h     # OpenGL rendering (texture quad)
+│       │   ├── color.h        # Cell-type → color mapping
 │       │   └── shader.h       # Shader compilation
 │       └── simulation/
 │           ├── simulation.h   # CPU simulation logic
 │           └── grid.h         # Grid representation
 ├── src/
-│   └── [corresponding .cpp files]
+│   └── [corresponding .cpp files + main.cpp]
 ├── shaders/
-│   ├── shader.vs             # Vertex shader (texture quad)
-│   └── shader.fs             # Fragment shader (texture sampling)
+│   ├── shader.vs              # Vertex shader (texture quad)
+│   └── shader.fs              # Fragment shader (texture sampling)
+├── third-party/               # Vendored ImGui and GLAD (built as static lib)
 └── CMakeLists.txt
 ```
 
 ### Key Classes
 
 - **`App`** - Main application loop, manages GLFW window, coordinates all subsystems
-- **`Simulation`** - Manages the CPU-side simulation, handles double buffering, implements cell movement rules
+- **`Simulation`** - Manages the CPU-side simulation, handles double buffering, implements cell movement rules, chunk
+  system
 - **`Renderer`** - Handles OpenGL rendering, converts cells to pixel array, uploads to texture quad
 - **`Grid`** - Grid representation storing cell data
 - **`UI`** - ImGui interface for brush selection, controls and stats
 - **`Input`** - Processes mouse/keyboard input for drawing particles
+
+## Configuration
+
+The application is initialized from a `Config` struct that bundles window size, grid size, and chunk parameters into a
+single object passed to `App`. This keeps initialization parameters in one place instead of scattered across
+constructors. In the future this may be expanded to load from a JSON file so settings can be changed without rebuilding.
+
+## Controls
+
+- **Left mouse** — place the selected particle
+- **Right mouse** — place stone
+- **Top-left UI** — brush options, particle selection, and sim stats
+
+<!-- TODO: insert UI screenshot here -->
 
 ## Current Status
 
@@ -215,6 +249,9 @@ The grid is configured to 400x400 by default but can handle up to 1000x1000.
 
 ## Future Improvements
 
-- [ ] Implement dirty rect optimization for static areas
 - [ ] Add velocity/acceleration to particles
 - [ ] Add more particle types (fire, acid, etc.)
+
+## License
+
+This project is licensed under the [MIT License](LICENSE). Vendored dependencies in `third-party/` (Dear ImGui, GLAD) retain their own licenses; GLFW (linked at build time) is distributed under the zlib/libpng license.
