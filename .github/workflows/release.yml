@@ -29,12 +29,11 @@ jobs:
           mkdir -p dist/falling-sand-linux
           cp build/falling_sand dist/falling-sand-linux/
           cp -r shaders dist/falling-sand-linux/
-          cd dist && zip -r falling-sand-linux.zip falling-sand-linux
 
       - uses: actions/upload-artifact@v4
         with:
           name: falling-sand-linux
-          path: dist/falling-sand-linux.zip
+          path: dist/falling-sand-linux
 
   build-windows:
     runs-on: windows-latest
@@ -60,13 +59,12 @@ jobs:
           Copy-Item build/Release/falling_sand.exe dist/falling-sand-windows/
           Copy-Item build/Release/*.dll dist/falling-sand-windows/ -ErrorAction SilentlyContinue
           Copy-Item -Recurse shaders dist/falling-sand-windows/
-          Compress-Archive -Path dist/falling-sand-windows -DestinationPath dist/falling-sand-windows.zip
         shell: pwsh
 
       - uses: actions/upload-artifact@v4
         with:
           name: falling-sand-windows
-          path: dist/falling-sand-windows.zip
+          path: dist/falling-sand-windows
 
   release:
     needs: [build-linux, build-windows]
@@ -82,10 +80,16 @@ jobs:
         with:
           path: dist
 
+      - name: Zip artifacts
+        run: |
+          cd dist
+          zip -r falling-sand-linux.zip falling-sand-linux
+          zip -r falling-sand-windows.zip falling-sand-windows
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/falling-sand-linux/falling-sand-linux.zip
-            dist/falling-sand-windows/falling-sand-windows.zip
+            dist/falling-sand-linux.zip
+            dist/falling-sand-windows.zip
           generate_release_notes: true
