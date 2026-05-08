@@ -5,8 +5,6 @@
 #include "imgui.h"
 #include "falling-sand/simulation/simulation.h"
 
-#include <unistd.h>
-
 UI::UI() : paused(false) {
 }
 
