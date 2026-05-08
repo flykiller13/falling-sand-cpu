@@ -1,0 +1,84 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake libglfw3-dev pkg-config
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release -j
+
+      - name: Package
+        run: |
+          mkdir -p dist/falling-sand-linux
+          cp build/falling_sand dist/falling-sand-linux/
+          cp -r shaders dist/falling-sand-linux/
+          cd dist && zip -r falling-sand-linux.zip falling-sand-linux
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: falling-sand-linux
+          path: dist/falling-sand-linux.zip
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install GLFW via vcpkg
+        run: vcpkg install glfw3:x64-windows
+        shell: pwsh
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows
+        shell: pwsh
+
+      - name: Build
+        run: cmake --build build --config Release -j
+        shell: pwsh
+
+      - name: Package
+        run: |
+          New-Item -ItemType Directory -Force -Path dist/falling-sand-windows | Out-Null
+          Copy-Item build/Release/falling_sand.exe dist/falling-sand-windows/
+          Copy-Item build/Release/*.dll dist/falling-sand-windows/ -ErrorAction SilentlyContinue
+          Copy-Item -Recurse shaders dist/falling-sand-windows/
+          Compress-Archive -Path dist/falling-sand-windows -DestinationPath dist/falling-sand-windows.zip
+        shell: pwsh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: falling-sand-windows
+          path: dist/falling-sand-windows.zip
+
+  release:
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/falling-sand-linux/falling-sand-linux.zip
+            dist/falling-sand-windows/falling-sand-windows.zip
+          generate_release_notes: true

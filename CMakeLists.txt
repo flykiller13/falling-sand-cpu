@@ -5,8 +5,14 @@ set(CMAKE_CXX_STANDARD 20)
 
 # Dependencies
 find_package(OpenGL REQUIRED)
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(GLFW REQUIRED glfw3)
+find_package(glfw3 CONFIG QUIET)
+if(glfw3_FOUND)
+    set(GLFW_TARGET glfw)
+else()
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(GLFW REQUIRED glfw3)
+    set(GLFW_TARGET ${GLFW_LIBRARIES})
+endif()
 
 # Third-party: ImGui
 add_library(imgui STATIC
@@ -22,7 +28,7 @@ target_include_directories(imgui PUBLIC
     third-party/imgui/backends
     third-party/glad/include
 )
-target_link_libraries(imgui PUBLIC OpenGL::GL ${GLFW_LIBRARIES})
+target_link_libraries(imgui PUBLIC OpenGL::GL ${GLFW_TARGET})
 
 # Main executable
 add_executable(falling_sand
@@ -40,4 +46,4 @@ target_include_directories(falling_sand PRIVATE
     include
     third-party/glad/include
 )
-target_link_libraries(falling_sand PRIVATE OpenGL::GL ${GLFW_LIBRARIES} imgui)
+target_link_libraries(falling_sand PRIVATE OpenGL::GL ${GLFW_TARGET} imgui)

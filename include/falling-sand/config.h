@@ -9,8 +9,8 @@ struct Config {
   int window_height = 800;
 
   // grid size can be different from window size - cells will be stretched
-  int grid_width = 400;
-  int grid_height = 400;
+  int grid_width = 800;
+  int grid_height = 800;
 
   // chunk info - 16x16 is a good compromise. change based on grid size.
   // doesn't have to be aligned to grid/window size.
