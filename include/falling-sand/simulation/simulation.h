@@ -29,11 +29,17 @@ public:
     return grid_.cells[x + y * grid_.width];
   }
 
-  const uint32_t &get_active_cell_count() const { return active_cell_count_; }
+  const int get_active_cell_count() const { return active_cell_count_; }
+  const int get_active_chunk_count() const { return active_chunk_count_; }
+  const int get_num_chunks_x() const { return num_chunks_x; }
+  const int get_num_chunks_y() const { return num_chunks_y; }
 
   bool is_in_bounds(int x, int y) const;
   bool can_move_to(int x, int y, CellType cell_type) const;
   void move_to(int from_x, int from_y, int to_x, int to_y); // Swaps cells
+
+  const int total_cell_count;
+  const int total_chunk_count;
 
 private:
   static float density(CellType type); // returns the density of type
@@ -47,7 +53,7 @@ private:
   // We use a double buffer method - Data is read from grid and written to next_grid
   Grid grid_;
   Grid next_grid_;
-  uint32_t active_cell_count_ = 0;
+  int active_cell_count_ = 0;
 
   // dirty chunks - the grid is divided into chunks.
   // we iterate only over dirty chunks,
@@ -57,12 +63,13 @@ private:
   std::vector<Chunk> chunks_;
   int chunk_size_;
   int chunk_margin_;
+  int active_chunk_count_ = 0;
 
   // timestep
   double accumulator_ = 0.0;
   const double fixed_delta_time = 1.0 / 60; // 60 ticks per second
   const double max_delta_time = 1.0 / 10.0;
-  const int dispersion_range = 5;
+  const int dispersion_range = 2;
   // how many cells water/gas spread sideways per tick
 
   // random - for choosing a direction

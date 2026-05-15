@@ -5,9 +5,11 @@
 
 Simulation::Simulation(const Config &config)
   : grid_(config.grid_width, config.grid_height),
+    total_cell_count(config.grid_width * config.grid_height),
     next_grid_(config.grid_width, config.grid_height),
     num_chunks_x(config.num_chunks_x),
     num_chunks_y(config.num_chunks_y),
+    total_chunk_count(config.num_chunks_x * config.num_chunks_y),
     chunk_size_(config.grid_width / config.num_chunks_x),
     chunk_margin_(config.chunk_margin),
     gen_(rd_()),
@@ -46,10 +48,12 @@ void Simulation::simulation_tick() {
     }
   }
 
+  active_chunk_count_ = 0;
   active_cell_count_ = 0;
   for (int cx = 0; cx < num_chunks_x; cx++) {
     for (int cy = 0; cy < num_chunks_y; cy++) {
       if (chunks_[chunk_index(cx, cy)].dirty_current) {
+        active_chunk_count_++;
         iterate_chunk(cx, cy);
       }
     }

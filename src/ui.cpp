@@ -28,6 +28,14 @@ void UI::update(Simulation &sim) {
 
   ImGui::Begin("Simulation Controls", &show_window);
 
+  // Pause/Resume simulation
+  if (ImGui::Button(paused ? "Resume" : "Pause"))
+    paused = !paused;
+  ImGui::SameLine();
+  // Clear simulation
+  if (ImGui::Button("Clear"))
+    sim.clear();
+
   // Brush
   ImGui::SeparatorText("Brush");
   int current_brush_type = static_cast<int>(brush_type);
@@ -53,18 +61,15 @@ void UI::update(Simulation &sim) {
   // Simulation
   ImGui::SeparatorText("Simulation");
   // Stats
-  ImGui::Text("Frame Time: %f fps, %.3f ms", ImGui::GetIO().Framerate,
+  ImGui::Text("Frame Time: %.0f fps, %.2f ms", ImGui::GetIO().Framerate,
               1000.0f / ImGui::GetIO().Framerate);
-  ImGui::Text("Delta Time: %.3f ms", ImGui::GetIO().DeltaTime * 1000.0f);
   ImGui::Text("Grid: %d x %d", sim.get_grid_width(), sim.get_grid_height());
-  ImGui::Text("Active Particles: %d", sim.get_active_cell_count());
-
-  if (ImGui::Button(paused ? "Resume" : "Pause"))
-    paused = !paused;
-  ImGui::SameLine();
-  // Clear simulation
-  if (ImGui::Button("Clear"))
-    sim.clear();
+  ImGui::Text("Active cells: %d / %d", sim.get_active_cell_count(),
+              sim.total_cell_count);
+  ImGui::Text("Chunks: %d x %d", sim.get_num_chunks_x(),
+              sim.get_num_chunks_y());
+  ImGui::Text("Active Chunks: %d / %d", sim.get_active_chunk_count(),
+              sim.total_chunk_count);
 
   ImGui::End();
 

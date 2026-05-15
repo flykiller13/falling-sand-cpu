@@ -48,8 +48,9 @@ void Input::apply_brush(GLFWwindow *window, Simulation &sim, int brush_size,
   for (int x = grid_x - brush_size; x <= grid_x + brush_size; x++) {
     for (int y = grid_y - brush_size; y <= grid_y + brush_size; y++) {
       if ((x - grid_x) * (x - grid_x) + (y - grid_y) * (y - grid_y) <=
-          brush_size * brush_size)
+          brush_size * brush_size && sim.is_in_bounds(x, y)) {
         sim.set_cell(x, y, type);
+      }
     }
   }
 }
